@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>酒錢分攤紀錄</title>
+  <style>
+    table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    input { width: 100px; }
+    button { margin: 10px; padding: 10px 20px; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">酒錢分攤紀錄表</h2>
+  <form id="drinksForm">
+    <table>
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>酒錢 (NT$)</th>
+          <th>上班人數</th>
+          <th>每人分攤</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- 自動生成日期列 -->
+      </tbody>
+    </table>
+    <div style="text-align:center;">
+      <button type="button" onclick="submitData()">儲存</button>
+      <button type="button" onclick="exportReport()">匯出報表</button>
+    </div>
+  </form>
+
+  <script>
+    // 自動取得當月天數
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 月份是 0-11，所以要 +1
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const tableBody = document.getElementById("tableBody");
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}</td>
+        <td><input type="number" name="amount_${d}" oninput="calc(${d})"></td>
+        <td><input type="number" name="staff_${d}" oninput="calc(${d})"></td>
+        <td><span id="per_${d}"></span></td>
+      `;
+      tableBody.appendChild(row);
+    }
+
+    function calc(day) {
+      const amount = document.querySelector(`[name=amount_${day}]`).value;
+      const staff = document.querySelector(`[name=staff_${day}]`).value;
+      const perCell = document.getElementById(`per_${day}`);
+      if (amount && staff > 0) {
+        perCell.textContent = (amount / staff).toFixed(2);
+      } else {
+        perCell.textContent = "";
+      }
+    }
+
+    function submitData() {
+      const data = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const amount = document.querySelector(`[name=amount_${d}]`).value || 0;
+        const staff = document.querySelector(`[name=staff_${d}]`).value || 0;
+        data.push({ date: `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`, amount, staff });
+      }
+      fetch("/save_drinks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(res => alert("紀錄已送出！"));
+    }
+
+    function exportReport() {
+      window.location.href = "/export_drinks"; // 直接下載 Excel
+    }
+  </script>
+</body>
+</html>
