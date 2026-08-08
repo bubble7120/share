@@ -76,6 +76,10 @@ def export_drinks():
                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition":"attachment;filename=drinks.xlsx"})
 
+import os
+
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render 會指定 PORT
+    app.run(host="0.0.0.0", port=port, debug=True)
+
