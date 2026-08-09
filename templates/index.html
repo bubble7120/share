@@ -54,7 +54,7 @@
           <button type="button" onclick="removeBottle(${d})">－</button>
         </td>
         <td>
-          <input type="number" name="staff_${d}" placeholder="人數" oninput="calc(${d})"><br>
+          <input type="number" name="staff_${d}" placeholder="人數(必填)" oninput="calc(${d})"><br>
           <div id="names_${d}">
             ${Array(5).fill().map((_, i) =>
               `${i+1}. <input type="text" name="name_${d}" placeholder="上班人名(非必填)">`
