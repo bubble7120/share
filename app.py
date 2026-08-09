@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, Response
 import sqlite3
 import pandas as pd
 from io import BytesIO
+import math
 
 app = Flask(__name__)
 
@@ -49,9 +50,10 @@ def export_drinks():
 
     df = pd.DataFrame(rows, columns=["日期", "酒錢總計", "上班人數", "員工名字"])
     df["每人分到"] = df.apply(
-    lambda x: (x["酒錢總計"] / x["上班人數"]) if x["上班人數"] > 0 else 0,
+    lambda x: math.floor(x["酒錢總計"] / x["上班人數"]) if x["上班人數"] > 0 else 0,
     axis=1
 )
+
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
