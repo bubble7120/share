@@ -47,7 +47,7 @@ def export_drinks():
     if not rows:
         return "目前沒有酒錢紀錄，請先填寫並送出。"
 
-    df = pd.DataFrame(rows, columns=["日期", "酒錢總計", "上班人數", "小姐名字"])
+    df = pd.DataFrame(rows, columns=["日期", "酒錢總計", "上班人數", "員工名字"])
     df["每人分到"] = df.apply(
     lambda x: (x["酒錢總計"] / x["上班人數"]) if x["上班人數"] > 0 else 0,
     axis=1
