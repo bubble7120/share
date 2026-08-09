@@ -4,11 +4,12 @@
   <meta charset="UTF-8">
   <title>酒錢分攤紀錄</title>
   <style>
-    table { border-collapse: collapse; width: 80%; margin: 20px auto; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    body { font-size: 12px; }
+    table { border-collapse: collapse; width: 95%; margin: 20px auto; font-size: 12px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
     th { background-color: #f2f2f2; }
-    input { width: 100px; }
-    button { margin: 10px; padding: 10px 20px; }
+    input { width: 100px; margin: 2px; font-size: 12px; }
+    button { margin: 2px; padding: 4px 8px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -19,13 +20,11 @@
         <tr>
           <th>日期</th>
           <th>酒錢 (NT$)</th>
-          <th>上班人數</th>
+          <th>上班人數 / 名字</th>
           <th>每人分攤</th>
         </tr>
       </thead>
-      <tbody id="tableBody">
-        <!-- 自動生成日期列 -->
-      </tbody>
+      <tbody id="tableBody"></tbody>
     </table>
     <div style="text-align:center;">
       <button type="button" onclick="submitData()">儲存</button>
@@ -34,31 +33,107 @@
   </form>
 
   <script>
-    // 自動取得當月天數
     const today = new Date();
     const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 月份是 0-11，所以要 +1
+    const month = today.getMonth() + 1;
     const daysInMonth = new Date(year, month, 0).getDate();
-
     const tableBody = document.getElementById("tableBody");
 
     for (let d = 1; d <= daysInMonth; d++) {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}</td>
-        <td><input type="number" name="amount_${d}" oninput="calc(${d})"></td>
-        <td><input type="number" name="staff_${d}" oninput="calc(${d})"></td>
+        <td>
+          <div>小計：<span id="total_${d}"></span></div>
+          <div id="amounts_${d}">
+            ${Array(5).fill().map((_, i) =>
+              `${i+1}. <input type="number" name="amount_${d}" placeholder="酒的價格" oninput="calc(${d})">`
+            ).join("<br>")}
+          </div>
+          <button type="button" onclick="addBottle(${d})">＋</button>
+          <button type="button" onclick="removeBottle(${d})">－</button>
+        </td>
+        <td>
+          <input type="number" name="staff_${d}" placeholder="人數" oninput="calc(${d})"><br>
+          <div id="names_${d}">
+            ${Array(5).fill().map((_, i) =>
+              `${i+1}. <input type="text" name="name_${d}" placeholder="上班人名(非必填)">`
+            ).join("<br>")}
+          </div>
+          <button type="button" onclick="addName(${d})">＋</button>
+          <button type="button" onclick="removeName(${d})">－</button>
+        </td>
         <td><span id="per_${d}"></span></td>
       `;
       tableBody.appendChild(row);
     }
 
+    function addBottle(day) {
+      const container = document.getElementById(`amounts_${day}`);
+      const count = container.querySelectorAll("input").length + 1;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.name = `amount_${day}`;
+      input.placeholder = "酒的價格";
+      input.oninput = () => calc(day);
+      container.appendChild(document.createElement("br"));
+      container.appendChild(document.createTextNode(count + ". "));
+      container.appendChild(input);
+    }
+
+    function removeBottle(day) {
+      const container = document.getElementById(`amounts_${day}`);
+      const inputs = container.querySelectorAll("input");
+      if (inputs.length > 1) {
+        // 移除最後一個 input 和前面的文字/換行
+        container.removeChild(inputs[inputs.length - 1].previousSibling); // 編號文字
+        container.removeChild(inputs[inputs.length - 1]); // input
+        const brs = container.querySelectorAll("br");
+        if (brs.length >= inputs.length) {
+          container.removeChild(brs[brs.length - 1]);
+        }
+        calc(day);
+      }
+    }
+
+    function addName(day) {
+      const container = document.getElementById(`names_${day}`);
+      const count = container.querySelectorAll("input").length + 1;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.name = `name_${day}`;
+      input.placeholder = "上班人名(非必填)";
+      container.appendChild(document.createElement("br"));
+      container.appendChild(document.createTextNode(count + ". "));
+      container.appendChild(input);
+    }
+
+    function removeName(day) {
+      const container = document.getElementById(`names_${day}`);
+      const inputs = container.querySelectorAll("input");
+      if (inputs.length > 1) {
+        container.removeChild(inputs[inputs.length - 1].previousSibling); // 編號文字
+        container.removeChild(inputs[inputs.length - 1]); // input
+        const brs = container.querySelectorAll("br");
+        if (brs.length >= inputs.length) {
+          container.removeChild(brs[brs.length - 1]);
+        }
+      }
+    }
+
     function calc(day) {
-      const amount = document.querySelector(`[name=amount_${day}]`).value;
+      const amountInputs = document.querySelectorAll(`[name=amount_${day}]`);
+      let total = 0;
+      amountInputs.forEach(input => {
+        if (input.value) total += parseFloat(input.value);
+      });
+      document.getElementById(`total_${day}`).textContent = total.toFixed(2);
+
+
       const staff = document.querySelector(`[name=staff_${day}]`).value;
       const perCell = document.getElementById(`per_${day}`);
-      if (amount && staff > 0) {
-        perCell.textContent = (amount / staff).toFixed(2);
+      if (staff > 0) {
+        perCell.textContent = (total / staff).toFixed(2);
       } else {
         perCell.textContent = "";
       }
@@ -67,9 +142,23 @@
     function submitData() {
       const data = [];
       for (let d = 1; d <= daysInMonth; d++) {
-        const amount = document.querySelector(`[name=amount_${d}]`).value || 0;
+        const amountInputs = document.querySelectorAll(`[name=amount_${d}]`);
+        const amounts = [];
+        amountInputs.forEach(input => {
+          if (input.value) amounts.push(parseFloat(input.value));
+        });
         const staff = document.querySelector(`[name=staff_${d}]`).value || 0;
-        data.push({ date: `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`, amount, staff });
+        const nameInputs = document.querySelectorAll(`[name=name_${d}]`);
+        const names = [];
+        nameInputs.forEach(input => {
+          if (input.value) names.push(input.value);
+        });
+        data.push({
+          date: `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+          amounts: amounts,
+          staff: staff,
+          names: names
+        });
       }
       fetch("/save_drinks", {
         method: "POST",
@@ -79,8 +168,9 @@
     }
 
     function exportReport() {
-      window.location.href = "/export_drinks"; // 直接下載 Excel
+      window.location.href = "/export_drinks";
     }
   </script>
 </body>
 </html>
+
